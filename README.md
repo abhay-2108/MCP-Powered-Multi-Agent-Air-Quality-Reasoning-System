@@ -1,4 +1,4 @@
-# MCP-Powered Multi-Agent Air Quality Reasoning System
+# MCP-Powered Air Quality Reasoning System
 
 ## 1. Introduction
 Air pollution is one of the most pressing global challenges affecting environmental quality, respiratory health, and urban livability. While cities deploy monitoring stations, they often fail to integrate multi-dimensional signals such as vehicular emissions, visual pollution signatures, AQI trends, and health impact indicators.
