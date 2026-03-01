@@ -14,18 +14,18 @@ A deep learning–based air quality analysis system exposed through the **Model 
 └────────────────────────┬─────────────────────────────────┘
                          │ MCP Protocol (stdio)
 ┌────────────────────────▼─────────────────────────────────┐
-│                   MCP Server (server.py)                  │
+│                   MCP Server (server.py)                 │
 │                                                          │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐   │
-│  │  AQI LSTM    │  │  CNN Image   │  │  Emission    │   │
-│  │  Forecaster  │  │  Classifier  │  │  Predictor   │   │
-│  │  (Keras)     │  │  (ONNX)      │  │  (ONNX)      │   │
-│  └──────────────┘  └──────────────┘  └──────────────┘   │
-│                    ┌──────────────┐                       │
-│                    │  Health Risk │                       │
-│                    │  Estimator   │                       │
-│                    │  (ONNX)      │                       │
-│                    └──────────────┘                       │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐    │
+│  │  AQI LSTM    │  │  CNN Image   │  │  Emission    │    │
+│  │  Forecaster  │  │  Classifier  │  │  Predictor   │    │
+│  │  (Keras)     │  │  (ONNX)      │  │  (ONNX)      │    │
+│  └──────────────┘  └──────────────┘  └──────────────┘    │
+│                    ┌──────────────┐                      │
+│                    │  Health Risk │                      │
+│                    │  Estimator   │                      │
+│                    │  (ONNX)      │                      │
+│                    └──────────────┘                      │
 └──────────────────────────────────────────────────────────┘
 ```
 
