@@ -1,71 +1,203 @@
-# MCP-Powered Air Quality Reasoning System
+#  MCP-Powered Multi-Agent Air Quality Reasoning System
 
-## 1. Introduction
-Air pollution is one of the most pressing global challenges affecting environmental quality, respiratory health, and urban livability. While cities deploy monitoring stations, they often fail to integrate multi-dimensional signals such as vehicular emissions, visual pollution signatures, AQI trends, and health impact indicators.
+A deep learning–based air quality analysis system exposed through the **Model Context Protocol (MCP)**. Four specialized neural network models work together as MCP tools, enabling LLM agents to reason about air quality from multiple perspectives — pollutant data, satellite/street imagery, vehicle emissions, and public health risk.
 
-This project proposes an **AI-Driven Air Pollution Risk Intelligence Agent**, powered by multiple deep learning models exposed via a **Model Context Protocol (MCP)** server. Each model functions as a distinct "tool," enabling modular reasoning, real-time prediction, and actionable risk advisory.
+---
 
-## 2. Problem Definition
-Existing systems typically provide only raw pollution statistics (AQI values). They lack the capability to:
-*   Forecast pollution progression over time.
-*   Identify pollution sources, such as specific traffic behaviors.
-*   Detect visual pollution signatures from city imagery.
-*   Map pollution data directly to population health risks.
+##  Architecture
 
-There is currently no holistic agent capable of learning pollution patterns, interpreting emissions, and generating contextual health advisories simultaneously.
+```
+┌──────────────────────────────────────────────────────────┐
+│                    LLM Agent (Client)                    │
+│         Receives user query → selects tools →            │
+│         chains results → delivers final answer           │
+└────────────────────────┬─────────────────────────────────┘
+                         │ MCP Protocol (stdio)
+┌────────────────────────▼─────────────────────────────────┐
+│                   MCP Server (server.py)                  │
+│                                                          │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐   │
+│  │  AQI LSTM    │  │  CNN Image   │  │  Emission    │   │
+│  │  Forecaster  │  │  Classifier  │  │  Predictor   │   │
+│  │  (Keras)     │  │  (ONNX)      │  │  (ONNX)      │   │
+│  └──────────────┘  └──────────────┘  └──────────────┘   │
+│                    ┌──────────────┐                       │
+│                    │  Health Risk │                       │
+│                    │  Estimator   │                       │
+│                    │  (ONNX)      │                       │
+│                    └──────────────┘                       │
+└──────────────────────────────────────────────────────────┘
+```
 
-## 3. Innovation Statement
-This system introduces four autonomous deep learning models, each addressing a unique dimension of urban air pollution. The core innovation lies in decomposing pollution intelligence into machine-learned expertise layers rather than relying on a single monolithic model.
+---
 
-*   **Temporal View**: Predicts future AQI levels using LSTM-based time-series forecasting.
-*   **Spatial View**: Uses a CNN to classify polluted city environments from image signals.
-*   **Source View**: Uses a mobility-informed DNN model to estimate emission levels from vehicle/traffic behavior.
-*   **Human Impact View**: Uses a health impact model to infer public risk based on correlated environmental and medical datasets.
+##  MCP Tools
 
-**MCP-Enabled AI Orchestration**: All models are wrapped as MCP tools, allowing higher-level agents to combine predictions, reason over multi-modal signals, and generate actionable guidance.
+### 1. `predict_aqi_forecast`
+> Predicts AQI for the next **4 hours** using an LSTM model.
 
-## 4. Deep Learning Models & Justification
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `pm25`, `pm10` | float | Particulate matter concentrations |
+| `no`, `no2`, `nox` | float | Nitrogen oxide levels |
+| `nh3`, `co`, `so2`, `o3` | float | Other gas concentrations |
+| `benzene`, `toluene`, `xylene` | float | Volatile organic compounds |
 
-### 4.1 LSTM Time-Series Classifier (AQI Forecasting)
-*   **Why Best Suited**: AQI is highly dependent on past temporal patterns. LSTMs model multivariate sequences better than traditional statistical models and can learn daily, weekly, and seasonal patterns.
-*   **Function**: Predicts the next-state AQI category (Good, Satisfactory, Moderate, Poor, Very Poor).
+**Returns:** Current AQI estimate + 4-hour forecast.
 
-### 4.2 Transfer Learning CNN (EfficientNet-B0 / ResNet50)
-*   **Why Best Suited**: Pollution cues (smog, haze) are visual and subtle. CNNs capture global scene representation, and transfer learning is effective for smaller domain-specific datasets.
-*   **Function**: Classifies imagery as "Polluted" or "Non-Polluted."
+---
 
-### 4.3 DNN with Embeddings (Emission Prediction)
-*   **Why Best Suited**: The dataset contains mixed categorical and numeric features. Deep embeddings allow for learning vehicle type, fuel, and traffic context while capturing non-linear interactions.
-*   **Function**: Classifies vehicle emission levels (Low / Medium / High).
+### 2. `classify_pollution_image`
+> Classifies air pollution severity from an urban photograph using a CNN (ResNet-based).
 
-### 4.4 Multi-Task DNN (Health Impact Estimation)
-*   **Why Best Suited**: Health impact is derived from multiple interacting features. Learning the score and class jointly improves representation and supports both quantitative and qualitative advisory generation.
-*   **Function**: Outputs a Health Risk Score (0–100) and a Risk Class (Very Low to Very High).
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `image_path` | string | Absolute path to an urban/outdoor image |
+
+**Returns:** Pollution category — *Good, Moderate, Unhealthy for Sensitive Groups, Unhealthy, Very Unhealthy, Severe*.
+
+---
+
+### 3. `predict_vehicle_emission`
+> Predicts vehicle emission level (Low / Medium / High) based on vehicle and driving characteristics.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `engine_size` | float | *required* | Engine displacement (L) |
+| `mileage` | float | *required* | Total distance driven (km) |
+| `speed` | float | *required* | Current speed (km/h) |
+| `vehicle_type` | string | `"Car"` | Bus, Car, Motorcycle, Truck |
+| `fuel_type` | string | `"Gasoline"` | Diesel, Electric, Gasoline, Hybrid |
+| `road_type` | string | `"Highway"` | City, Highway, Rural |
+| `traffic` | string | `"Moderate"` | Low, Moderate, Heavy |
+| `age` | int | `5` | Vehicle age (years) |
+| `acceleration` | float | `2.5` | Acceleration (m/s²) |
+| `temperature` | float | `25` | Ambient temperature (°C) |
+| `humidity` | float | `50` | Relative humidity (%) |
+| `wind_speed` | float | `10` | Wind speed (km/h) |
+| `air_pressure` | float | `1013` | Atmospheric pressure (hPa) |
+
+**Returns:** Emission category and confidence probabilities.
+
+---
+
+### 4. `estimate_health_risk`
+> Estimates public health impact using a multi-task model.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `aqi` | float | Current Air Quality Index |
+| `pm10`, `pm25` | float | Particulate matter levels |
+| `no2`, `so2`, `o3` | float | Gas concentrations |
+| `temperature` | float | Ambient temperature (°C) |
+| `humidity` | float | Relative humidity (%) |
+| `wind_speed` | float | Wind speed (km/h) |
+
+**Returns:** Health impact score (0–100), risk category, and recommendation.
+
+---
 
 
 
-## 5. Datasets Used
-| Component | Dataset Name | Source | Purpose |
-| :--- | :--- | :--- | :--- |
-| **LSTM Forecasting** | Air Quality Data in India | Kaggle | Train LSTM to predict AQI classes. |
-| **CNN Visual Classifier** | Air Pollution Image Dataset | Kaggle | Train CNN to detect visual pollution/haze. |
-| **Emission Predictor** | Vehicle Emission Dataset | Kaggle | Learn effects of vehicle/traffic on pollution. |
-| **Health Advisor** | Air Quality & Health Impact | Kaggle | Map pollution data to public health risk. |
+##  Getting Started
 
-## 7. Social Relevance
-This work directly contributes to the UN Sustainable Development Goals:
-*   **SDG 3: Good Health and Well-being**
-*   **SDG 11: Sustainable Cities and Communities**
-*   **SDG 13: Climate Action**
+### Prerequisites
 
-**Key Contributions**:
-*   Cleaner Urban Planning: Data-driven insights for city infrastructure.
-*   Smart City Mitigation: Real-time triggers for pollution control.
-*   Policy Regulation: Evidence-based traffic emission regulation.
-*   Public Awareness: Early warnings for vulnerable groups.
+- **Python 3.10+**
+- **pip** (package manager)
 
-## 8. Innovation Breakdown
-*   **Multi-dimensional Intelligence**: Integrates temporal, perception-based, source attribution, and health advisory generation.
-*   **Multi-Model & Multi-Agent AI**: Modular MCP-served models for composable reasoning.
-*   **Real-World Impact**: Applicable to smart cities, environmental boards, and healthcare.
-*   **Interpretability & Interoperability**: Independent model upgrades without system redesign.
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/abhay-2108/MCP-Powered-Multi-Agent-Air-Quality-Reasoning-System.git
+cd MCP-Powered-Multi-Agent-Air-Quality-Reasoning-System
+```
+
+### 2. Create Virtual Environment
+
+```bash
+python -m venv venv
+
+# Windows
+.\venv\Scripts\activate
+
+# macOS / Linux
+source venv/bin/activate
+```
+
+### 3. Install Dependencies
+
+```bash
+pip install mcp[cli] tensorflow onnxruntime numpy Pillow
+```
+
+### 4. Run the MCP Server
+
+```bash
+python mcp_server/server.py
+```
+
+The server starts via **stdio** transport — it's designed to be launched by an MCP-compatible client (like Gemini CLI, Claude Desktop, or a custom agent).
+
+### 5. Client Configuration
+
+Add the following to your MCP client's config (e.g., `mcp_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "air-quality": {
+      "command": "./venv/Scripts/python.exe",
+      "args": ["mcp_server/server.py"],
+      "env": { "PYTHONPATH": "." }
+    }
+  }
+}
+```
+
+---
+
+##  Example Usage
+
+See [`sample_input.txt`](sample_input.txt) for a full set of example prompts. Here's a quick example:
+
+**Prompt:**
+> Predict the air quality index for the next 4 hours given PM2.5 = 85, PM10 = 110, NO = 15, NO2 = 43, NOx = 55, NH3 = 8, CO = 1.2, SO2 = 10, O3 = 62, Benzene = 2.1, Toluene = 5.4, Xylene = 1.8
+
+**Response:**
+| Timeframe | AQI |
+|-----------|-----|
+| Current | 128.1 |
+| +1 hour | 139.3 |
+| +2 hours | 141.7 |
+| +3 hours | 144.4 |
+| +4 hours | 148.0 |
+
+---
+
+##  Models
+
+| Model | Architecture | Format | Task |
+|-------|-------------|--------|------|
+| AQI Forecaster | LSTM (stacked) | Keras | 4-hour AQI time series prediction |
+| Image Classifier | ResNet-50 (fine-tuned) | ONNX | 6-class air pollution severity from photos |
+| Emission Predictor | Dense NN | ONNX | Vehicle emission level (Low/Medium/High) |
+| Health Estimator | Multi-task Dense NN | ONNX | Health impact score + risk category |
+
+All models were trained in the Jupyter notebooks under `Notebooks/`. Training plots and visualizations are saved in `Images/`.
+
+---
+
+##  Multi-Agent Reasoning
+
+The system is designed for **chained reasoning** — an LLM agent can:
+
+1. **See** → Classify pollution from a camera image
+2. **Source** → Estimate vehicle emission contributions
+3. **Forecast** → Predict AQI trends for the next 4 hours
+4. **Assess** → Evaluate public health risk and generate advisories
+
+The agent dynamically selects and sequences tools based on the user's query, combining results into a unified analysis.
+
+---
+

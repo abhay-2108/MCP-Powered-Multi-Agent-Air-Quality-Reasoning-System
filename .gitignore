@@ -1,0 +1,42 @@
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+.virtual_documents/
+
+# Datasets (too large for Git)
+# datasets/
+
+# Model files (large binaries — store via Git LFS or external hosting)
+models/**/*.keras
+models/**/*.pth
+models/**/*.onnx
+models/**/*.onnx.data
+!models/**/.gitkeep
+
+# IDE & editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Output & temp files
+output.txt
+pipeline_output.txt
+pipeline_results.json
+notebook_analysis.txt
+*.log

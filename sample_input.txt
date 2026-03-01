@@ -1,0 +1,77 @@
+==============================================================================
+  MCP-Powered Multi-Agent Air Quality Reasoning System — Sample Prompts
+==============================================================================
+
+Below are example prompts you can use with the MCP agent to invoke
+different air-quality prediction tools. Copy-paste any prompt as-is
+or modify the values to match your scenario.
+
+------------------------------------------------------------------------------
+1. AQI FORECAST (Next 4 Hours)
+   Tool: predict_aqi_forecast
+   Requires 12 pollutant readings.
+------------------------------------------------------------------------------
+
+Predict the air quality index for the next 4 hours given these pollutant levels:
+{
+  "pm25": 85.4,
+  "pm10": 110.2,
+  "no": 15.1,
+  "no2": 42.8,
+  "nox": 55.3,
+  "nh3": 8.4,
+  "co": 1.2,
+  "so2": 10.5,
+  "o3": 62.1,
+  "benzene": 2.1,
+  "toluene": 5.4,
+  "xylene": 1.8
+}
+
+------------------------------------------------------------------------------
+2. HEALTH RISK ESTIMATION
+   Tool: estimate_health_risk
+   Requires AQI + 8 environmental features.
+------------------------------------------------------------------------------
+
+Estimate the health risk for the following environmental conditions:
+AQI = 128, PM2.5 = 85.4, PM10 = 110.2, NO2 = 42.8, SO2 = 10.5,
+O3 = 62.1, Temperature = 32°C, Humidity = 65%, Wind Speed = 8 km/h.
+
+------------------------------------------------------------------------------
+3. VEHICLE EMISSION PREDICTION
+   Tool: predict_vehicle_emission
+   Requires engine size, mileage, and speed (+ optional parameters).
+------------------------------------------------------------------------------
+
+Predict the emission level for a car with:
+Engine Size = 2.0L, Mileage = 45000 km, Speed = 80 km/h,
+Fuel Type = Gasoline, Vehicle Age = 5 years, Road Type = Highway.
+
+Another example (diesel truck in city traffic):
+Predict vehicle emissions for a truck with a 5.0L diesel engine,
+120000 km mileage, driving at 30 km/h in city traffic.
+
+------------------------------------------------------------------------------
+4. AIR POLLUTION IMAGE CLASSIFICATION
+   Tool: classify_pollution_image
+   Requires a path to an urban/outdoor image.
+------------------------------------------------------------------------------
+
+Classify the air pollution level from this image: C:\path\to\your\image.jpg
+
+Analyze the air quality visible in the photo at: ./test_photos/city_view.png
+
+------------------------------------------------------------------------------
+5. CHAINED / MULTI-TOOL PROMPTS
+   The agent can combine multiple tools in a single query.
+------------------------------------------------------------------------------
+
+Given these pollutant levels — PM2.5: 120, PM10: 180, NO2: 55, SO2: 18,
+O3: 45, CO: 2.1, NO: 22, NOx: 70, NH3: 12, Benzene: 3.5, Toluene: 8.2,
+Xylene: 2.6 — first predict the AQI forecast for the next 4 hours, then
+estimate the health risk assuming Temperature = 35°C, Humidity = 70%,
+and Wind Speed = 5 km/h.
+
+Also predict emissions for a 1.6L gasoline car driving at 60 km/h
+with 30000 km mileage in moderate city traffic.
