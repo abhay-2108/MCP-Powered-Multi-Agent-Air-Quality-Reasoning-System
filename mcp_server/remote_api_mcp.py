@@ -14,10 +14,6 @@ from mcp.server.fastmcp import FastMCP
 # Initialize FastMCP Server
 mcp = FastMCP("Remote Prediction API System")
 
-# =========================================================================
-# TODO: Update this URL to your deployed Vercel URL
-# E.g., "https://my-medical-loan-api.vercel.app"
-# =========================================================================
 BASE_API_URL = "https://mcp-powered-multi-agent-air-quality.vercel.app" 
 
 @mcp.tool()
