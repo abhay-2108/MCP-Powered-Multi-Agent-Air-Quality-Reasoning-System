@@ -1,37 +1,32 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-import pandas as pd
 import numpy as np
-import pickle
+import onnxruntime as ort
 import os
 
-# Create standard FastAPI app without wrapping it
-app = FastAPI(title="Medical and Loan Prediction API", version="1.0")
+app = FastAPI(title="Medical and Loan Prediction API (ONNX-Powered)", version="1.0")
 
-# Note: Vercel places the executing file exactly here
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Point to the copies placed inside api/models/
-LOAN_MODEL_PATH = os.path.join(BASE_DIR, 'models', 'lgbm_model.pkl')
-HEART_MODEL_PATH = os.path.join(BASE_DIR, 'models', 'heart.pkl')
+# Point to ONNX models instead of heavy pickles
+LOAN_MODEL_PATH = os.path.join(BASE_DIR, 'models', 'lgbm_model.onnx')
+HEART_MODEL_PATH = os.path.join(BASE_DIR, 'models', 'random_forest_model.onnx')
 
-# Load models
-loan_model = None
-heart_model = None
-
-try:
-    with open(LOAN_MODEL_PATH, 'rb') as f:
-        loan_model = pickle.load(f)
-except Exception as e:
-    print(f"Error loading loan model: {e}")
+loan_session = None
+heart_session = None
 
 try:
-    with open(HEART_MODEL_PATH, 'rb') as f:
-        heart_model = pickle.load(f)
+    if os.path.exists(LOAN_MODEL_PATH):
+        loan_session = ort.InferenceSession(LOAN_MODEL_PATH)
 except Exception as e:
-    print(f"Error loading heart disease model: {e}")
+    print(f"Error loading ONNX loan model: {e}")
 
-# Loan Prediction Schema
+try:
+    if os.path.exists(HEART_MODEL_PATH):
+        heart_session = ort.InferenceSession(HEART_MODEL_PATH)
+except Exception as e:
+    print(f"Error loading ONNX heart disease model: {e}")
+
 class LoanPredictionInput(BaseModel):
     Gender: str
     Married: str
@@ -45,7 +40,6 @@ class LoanPredictionInput(BaseModel):
     Credit_History: float
     Property_Area: str
 
-# Heart Disease Prediction Schema
 class HeartDiseaseInput(BaseModel):
     age: float
     sex: int
@@ -63,8 +57,8 @@ class HeartDiseaseInput(BaseModel):
 
 @app.post("/predict_loan")
 def predict_loan(data: LoanPredictionInput):
-    if loan_model is None:
-        raise HTTPException(status_code=500, detail="Loan model not loaded")
+    if loan_session is None:
+        raise HTTPException(status_code=500, detail="Loan ONNX model not loaded")
     
     expected_cols = [
         'ApplicantIncome', 'CoapplicantIncome', 'LoanAmount', 'Loan_Amount_Term', 'Credit_History', 
@@ -88,18 +82,21 @@ def predict_loan(data: LoanPredictionInput):
     if f'Self_Employed_{data.Self_Employed}' in input_dict: input_dict[f'Self_Employed_{data.Self_Employed}'] = 1.0
     if f'Property_Area_{data.Property_Area}' in input_dict: input_dict[f'Property_Area_{data.Property_Area}'] = 1.0
 
-    df = pd.DataFrame([input_dict], columns=expected_cols)
+    features = np.array([[input_dict[col] for col in expected_cols]], dtype=np.float32)
+    
     try:
-        prediction = loan_model.predict(df)[0]
+        # Use the actual names from the model: 'input' and 'label'
+        prediction = loan_session.run(['label'], {'input': features})[0][0]
         prediction_label = "Approved" if prediction == 1 else "Rejected"
+        
         return {"prediction": int(prediction), "status": prediction_label}
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Prediction error: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"ONNX Prediction error: {str(e)}")
 
 @app.post("/predict_heart_disease")
 def predict_heart_disease(data: HeartDiseaseInput):
-    if heart_model is None:
-        raise HTTPException(status_code=500, detail="Heart Disease model not loaded")
+    if heart_session is None:
+        raise HTTPException(status_code=500, detail="Heart Disease ONNX model not loaded")
 
     try:
         trestbps_log = np.log(data.trestbps) if data.trestbps > 0 else 0
@@ -110,29 +107,40 @@ def predict_heart_disease(data: HeartDiseaseInput):
             data.age, data.sex, data.cp, trestbps_log, chol_log, data.fbs, 
             data.restecg, thalach_log, data.exang, data.oldpeak, data.slope, 
             data.ca, data.thal
-        ]])
+        ]], dtype=np.float32)
         
-        prediction = heart_model.predict(features)[0]
+        # Use the actual names from the model: 'float_input' and 'output_label'
+        # The model has 2 outputs, typically [label, probabilities]
+        outputs = heart_session.run(None, {'float_input': features})
+        prediction = outputs[0][0]
         prediction_label = "Heart Disease Present" if prediction == 1 else "No Heart Disease"
         
-        if hasattr(heart_model, "predict_proba"):
-            probability = heart_model.predict_proba(features)[0].tolist()
-            return {
-                "prediction": int(prediction), 
-                "status": prediction_label,
-                "probability": { "No Disease": probability[0], "Disease": probability[1] }
-            }
-            
-        return {"prediction": int(prediction), "status": prediction_label}
+        response = {"prediction": int(prediction), "status": prediction_label}
+        
+        # If there's a second output with probabilities
+        if len(outputs) > 1:
+            prob_output = outputs[1]
+            if isinstance(prob_output, list) and len(prob_output) > 0:
+                prob_dict = prob_output[0]
+                if 0 in prob_dict and 1 in prob_dict:
+                    response["probability"] = {
+                        "No Disease": float(prob_dict[0]),
+                        "Disease": float(prob_dict[1])
+                    }
+            elif isinstance(prob_output, np.ndarray) and prob_output.shape[1] >= 2:
+                response["probability"] = {
+                    "No Disease": float(prob_output[0, 0]),
+                    "Disease": float(prob_output[0, 1])
+                }
+
+        return response
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Prediction error: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"ONNX Prediction error: {str(e)}")
 
 @app.get("/health")
 def health_check():
     return {
         "status": "healthy",
-        "loan_model_loaded": loan_model is not None,
-        "heart_model_loaded": heart_model is not None
+        "loan_model_loaded": loan_session is not None,
+        "heart_model_loaded": heart_session is not None
     }
-
-# Ensure Vercel can wrap the ASGI app directly
