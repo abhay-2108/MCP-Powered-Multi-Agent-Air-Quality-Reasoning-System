@@ -75,3 +75,68 @@ and Wind Speed = 5 km/h.
 
 Also predict emissions for a 1.6L gasoline car driving at 60 km/h
 with 30000 km mileage in moderate city traffic.
+
+------------------------------------------------------------------------------
+6. ADDITIONAL TEST CASE PROMPTS (5-10 Samples)
+   Varied scenarios for robust testing.
+------------------------------------------------------------------------------
+
+[1] Low Pollution (Clean Air):
+Predict the air quality index for the next 4 hours with these clean air readings:
+{
+  "pm25": 5.2, "pm10": 12.1, "no": 2.1, "no2": 8.5, "nox": 10.3, "nh3": 2.4,
+  "co": 0.4, "so2": 3.1, "o3": 25.1, "benzene": 0.5, "toluene": 1.2, "xylene": 0.4
+}
+
+[2] Extreme Heatwave Health Risk:
+Estimate the health risk for a heatwave scenario:
+AQI = 210, PM2.5 = 150.4, PM10 = 230.2, NO2 = 82.8, SO2 = 35.5, O3 = 112.1,
+Temperature = 42°C, Humidity = 20%, Wind Speed = 2 km/h.
+
+[3] Vintage High-Emission Vehicle:
+Predict emissions for a 1970s classic car:
+Engine Size = 6.6L, Mileage = 250000 km, Speed = 50 km/h,
+Fuel Type = Gasoline, Vehicle Age = 54 years, Road Type = Urban.
+
+[4] Modern Small-Engine Hybrid:
+What is the predicted emission for a modern hybrid car with a 1.2L engine,
+5000 km mileage, driving at 40 km/h in light traffic?
+
+[5] Test Image Analysis (Local Path):
+Classify the air quality in the provided test image located at:
+Test Images/test_image3.webp
+
+[6] Foggy Winter Morning Health Risk:
+Calculate health risk for a foggy winter morning:
+AQI = 350, PM2.5 = 280, PM10 = 400, NO2 = 95, SO2 = 45, O3 = 30,
+Temperature = 4°C, Humidity = 95%, Wind Speed = 1 km/h.
+
+[7] Delivery Van Fleet Evaluation:
+Predict emissions for a delivery van: 3.0L Diesel, 85000 km, 25 km/h,
+heavy city traffic. Also predict for the same van on a highway at 90 km/h.
+
+[8] Industrial Zone Chained Analysis:
+In an industrial zone, we have these readings: PM2.5: 145, PM10: 210, NO2: 75,
+SO2: 40, O3: 90, CO: 3.5, NO: 35, NOx: 95, NH3: 25, Benzene: 12.5,
+Toluene: 22.4, Xylene: 8.8. Forecast the AQI for the next 4 hours and
+estimate the health risk assuming 38°C and 45% humidity.
+
+------------------------------------------------------------------------------
+7. REMOTE APIS & CROSS-SERVER UTILIZATION (Local + Cloud MCP)
+   Combines local environmental constraints with cloud medical/loan predictions.
+------------------------------------------------------------------------------
+
+[1] Remote Heart Disease + Local Environmental Health Risk:
+Assess my overall health outlook. First, calculate the air quality health risk for my neighborhood (AQI=160, PM2.5=85, PM10=110, NO2=42, O3=65, Temp=32, Humidity=60, Wind=8). Second, run my personal vitals through the remote heart disease predictor: I'm a 58-year-old male, cp=2, trestbps=130, chol=250, fbs=0, restecg=1, thalach=140, exang=0, oldpeak=1.2, slope=1, ca=0, thal=2. Combine these to give me an environmental and cardiovascular health summary.
+
+[2] Remote Loan Approval + Local Vehicle Emission Prediction:
+I want to buy a new car for a delivery business. Please first check if my loan will be approved: I'm a married male graduate, self-employed, 0 dependents, ApplicantIncome=8500, CoapplicantIncome=0, LoanAmount=350, Term=360, Credit_History=1.0, Rural property. Next, predict the vehicle emission for the delivery truck I intend to buy: 4.5L Diesel Engine, 150000 km mileage, driving at 40 km/h in Heavy City traffic.
+
+[3] Image Smog Classification + Remote Cardio Assessment:
+I just took a picture of the smog outside my window (C:\test_photos\heavy_smog.jpg). Please classify the pollution level from the image. Since it looks really bad out there, I'm worried about my heart condition. Predict my heart disease risk given: age=68, sex=1, cp=3, trestbps=145, chol=240, fbs=1, restecg=0, thalach=135, exang=1, oldpeak=2.5, slope=0, ca=1, thal=1. Tie the results together to advise if I should stay indoors today.
+
+[4] Holistic Urban Commuter Check (Remote Loan + Local AQI + Local Health):
+Can you give me a holistic view on my current living state? First, predict my loan approval for a house renovation: Female, Unmarried, 1 dependent, Graduate, not self-employed, ApplicantIncome=4500, CoapplicantIncome=1500, LoanAmount=200, Term=360, Credit_History=1.0, Urban property. Secondly, forecast the AQI for my region with these current levels: pm25=55, pm10=80, no=10, no2=30, nox=40, nh3=5, co=1.1, so2=8, o3=45, benzene=1.1, toluene=2.5, xylene=1.0. Given those environmental conditions, do I face a significant health risk (Temp=28°C, Humidity=55%, Wind=15 km/h)?
+
+[5] Cross-Server Vehicle Route Setup (Local Emissions + Remote Cardio):
+Evaluate an urban commuter's daily risk profile. Predict the emissions of their car: 2.5L Gasoline engine, 5 years old, 60000 km mileage, driving on a Highway at 90 km/h. Next, evaluate their personal heart disease risk to ensure driving in heavy pollution won't affect them: age=45, female (sex=0), cp=1, trestbps=120, chol=210, fbs=0, restecg=1, thalach=160, exang=0, oldpeak=0.3, slope=2, ca=0, thal=2. Finally, forecast the ambient AQI over the next 4 hours considering current PM2.5=95, PM10=115, and other pollutants at generic moderate levels.
