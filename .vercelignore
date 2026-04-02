@@ -1,0 +1,24 @@
+# Exclude heavy folders from Vercel deployment bundle
+.git
+venv
+datasets/
+/models/
+Images/
+Test Images/
+Notebooks/
+!api/models/
+*.csv
+*.keras
+*.pkl
+orchestrator
+sample_input.txt
+api_documentation.md
+nb_code.txt
+cols.txt
+convert_to_onnx.py
+convert_xgb.py
+test_api.py
+gap_analysis.md
+mcp_implementation_and_novelty.md
+error.txt
+error_utf8.txt
