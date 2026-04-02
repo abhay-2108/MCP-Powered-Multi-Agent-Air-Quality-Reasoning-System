@@ -1,7 +1,7 @@
 import requests
 import json
 
-BASE_URL = "http://127.0.0.1:8001"
+BASE_URL = "https://mcp-powered-multi-agent-air-quality.vercel.app" 
 
 print("--- Testing API Health ---")
 try:

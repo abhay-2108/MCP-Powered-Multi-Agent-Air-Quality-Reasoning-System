@@ -18,7 +18,7 @@ mcp = FastMCP("Remote Prediction API System")
 # TODO: Update this URL to your deployed Vercel URL
 # E.g., "https://my-medical-loan-api.vercel.app"
 # =========================================================================
-BASE_API_URL = "https://remotemcp-sepia.vercel.app" 
+BASE_API_URL = "https://mcp-powered-multi-agent-air-quality.vercel.app" 
 
 @mcp.tool()
 def predict_loan(
