@@ -19,8 +19,8 @@ __pycache__/
 # Model files (large binaries — store via Git LFS or external hosting)
 models/**/*.keras
 models/**/*.pth
-models/**/*.onnx
-models/**/*.onnx.data
+# models/**/*.onnx
+# models/**/*.onnx.data
 !models/**/.gitkeep
 
 # IDE & editor files
