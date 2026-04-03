@@ -116,3 +116,49 @@ The API returns a JSON object containing the prediction and probability:
 - `probability`: Float dictionary displaying confidence.
 
 *(Note: The API automatically handles necessary log transformations for `trestbps`, `chol`, and `thalach` internally before feeding it to the ONNX/Pickle model)*
+
+---
+
+## 3. Stock Price Prediction API
+
+**Endpoint**: `/predict_stock_price`  
+**Method**: `POST`
+
+### Expected Input (JSON)
+The API accepts a JSON object containing a list of exactly **20 historical data points**.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `open` | Float | Opening price of the day |
+| `high` | Float | Highest price of the day |
+| `low` | Float | Lowest price of the day |
+| `close` | Float | Closing price of the day |
+| `volume`| Float | Trading volume |
+| `average`| Float | Average price ((High + Low) / 2) |
+
+### Example Input Payload:
+```json
+{
+  "data": [
+    {
+      "open": 150.0,
+      "high": 155.0,
+      "low": 149.0,
+      "close": 152.0,
+      "volume": 1200000.0,
+      "average": 152.0
+    },
+    ... (repeated for 20 unique days)
+  ]
+}
+```
+
+### Expected Output
+The API returns the predicted closing price for the next day:
+```json
+{
+  "predicted_close_price": 153.45
+}
+```
+
+*(Note: The API automatically handles internal Min-Max scaling based on the training dataset (AAPL 2020-2023) before processing the sequence through the LSTM model)*
