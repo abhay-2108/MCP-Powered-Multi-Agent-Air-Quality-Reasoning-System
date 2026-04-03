@@ -96,6 +96,26 @@ def predict_heart_disease(
     except requests.exceptions.RequestException as e:
         return {"error": f"Failed to reach API: {str(e)}"}
 
+@mcp.tool()
+def predict_stock_price(
+    stock_data: list[dict]
+) -> dict:
+    """
+    Predicts the next day's closing price for a stock given exactly 20 days of historical data.
+    Each entry in stock_data must have: 'open', 'high', 'low', 'close', 'volume', and 'average'.
+    """
+    if len(stock_data) != 20:
+        return {"error": "Exactly 20 days of historical stock data are required."}
+    
+    payload = {"data": stock_data}
+
+    try:
+        response = requests.post(f"{BASE_API_URL}/predict_stock_price", json=payload)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        return {"error": f"Failed to reach API: {str(e)}"}
+
 if __name__ == "__main__":
     # Runs the standard MCP stdio communication
     mcp.run()

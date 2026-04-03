@@ -14,6 +14,9 @@ HEART_MODEL_PATH = os.path.join(BASE_DIR, 'models', 'random_forest_model.onnx')
 
 loan_session = None
 heart_session = None
+stock_session = None
+
+STOCK_MODEL_PATH = os.path.join(BASE_DIR, 'models', 'stock', 'model.onnx')
 
 try:
     if os.path.exists(LOAN_MODEL_PATH):
@@ -26,6 +29,12 @@ try:
         heart_session = ort.InferenceSession(HEART_MODEL_PATH)
 except Exception as e:
     print(f"Error loading ONNX heart disease model: {e}")
+
+try:
+    if os.path.exists(STOCK_MODEL_PATH):
+        stock_session = ort.InferenceSession(STOCK_MODEL_PATH)
+except Exception as e:
+    print(f"Error loading ONNX stock model: {e}")
 
 class LoanPredictionInput(BaseModel):
     Gender: str
@@ -54,6 +63,17 @@ class HeartDiseaseInput(BaseModel):
     slope: int
     ca: int
     thal: int
+
+class StockDataPoint(BaseModel):
+    open: float
+    high: float
+    low: float
+    close: float
+    volume: float
+    average: float
+
+class StockPriceInput(BaseModel):
+    data: list[StockDataPoint] # Expecting exactly 20 points
 
 @app.post("/predict_loan")
 def predict_loan(data: LoanPredictionInput):
@@ -137,10 +157,50 @@ def predict_heart_disease(data: HeartDiseaseInput):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"ONNX Prediction error: {str(e)}")
 
+@app.post("/predict_stock_price")
+def predict_stock_price(input_data: StockPriceInput):
+    if stock_session is None:
+        raise HTTPException(status_code=500, detail="Stock ONNX model not loaded")
+    
+    if len(input_data.data) != 20:
+        raise HTTPException(status_code=400, detail="Exactly 20 data points are required")
+
+    # Scaler parameters from research (AAPL 2020-2023)
+    MIN_VALS = np.array([-0.445872959091612, -0.44596566901222867, -0.4146727637730872, -0.45386920477129715, 2.5554918670193586e-09, -0.4308479860473215])
+    SCALE_VALS = np.array([0.008090593638048678, 0.008077401763183577, 0.008092026829110599, 0.008074094760290541, 1.0967396695276356e-08, 0.008080278853724128])
+
+    try:
+        # Convert Pydantic points to numpy array
+        raw_data = np.array([[p.open, p.high, p.low, p.close, p.volume, p.average] for p in input_data.data])
+        
+        # Scaling: (raw - internal_min) * internal_scale + internal_min * internal_scale (Wait, MinMaxScaler: X_scaled = X * scale + min_)
+        # Actually, MinMaxScaler fit results in: min_ = -X_min * scale. So: X_scaled = X * scale + min_
+        scaled_data = raw_data * SCALE_VALS + MIN_VALS
+        
+        # Reshape for LSTM: (1, 20, 6)
+        input_tensor = scaled_data.reshape(1, 20, 6).astype(np.float32)
+        
+        # ONNX Inference
+        outputs = stock_session.run(['output'], {'input': input_tensor})
+        # If output is a scalar (0-dimensional array), convert to float
+        prediction_scaled = float(outputs[0])
+        
+        # Prediction is on the 'Close' price (index 3)
+        # Inverse transform: pred_inv = (pred_scaled - min_[3]) / scale_[3]
+        prediction_actual = (prediction_scaled - MIN_VALS[3]) / SCALE_VALS[3]
+        
+        return {
+            "predicted_close_price": float(prediction_actual)
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Stock Prediction error: {str(e)}")
+
 @app.get("/health")
 def health_check():
     return {
         "status": "healthy",
         "loan_model_loaded": loan_session is not None,
-        "heart_model_loaded": heart_session is not None
+        "heart_model_loaded": heart_session is not None,
+        "stock_model_loaded": stock_session is not None
     }
